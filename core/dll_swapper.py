@@ -131,10 +131,128 @@ class DllSwapper:
             return {"success": False, "error": "El archivo especificado no existe."}
 
         meta = Win32VersionReader.get_dll_metadata(src)
-        dest_name = f"{src.stem}_{meta['version']}.dll" if meta["version"] != "Desconocida" else src.name
-        dest = self.library_dir / dest_name
+        try:
+            shutil.copy2(src, dest)
+            return {
+                "success": True,
+                "message": f"Librería importada a la bóveda: {dest.name}",
+                "version": meta["version"],
+                "destination": str(dest)
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
-    def download_official_dlss(self) -> Dict[str, Any]:
+    def swap_all_in_game(self, game_install_path: str) -> Dict[str, Any]:
+        """
+        Actualiza todas las DLLs de escalado en el juego utilizando la versión más reciente
+        compatible en la bóveda para cada tecnología correspondiente.
+        """
+        from core.dll_detector import DllDetector
+        from core.game_scanner import InstalledGameTarget
+
+        root = Path(game_install_path).resolve()
+        if not root.exists() or not root.is_dir():
+            return {"success": False, "error": f"Directorio no encontrado: {root}"}
+
+        vault_versions = self.get_library_versions()
+        if not vault_versions:
+            return {"success": False, "error": "No hay librerías en la bóveda. Haz clic en 'DESCARGAR OFICIAL NVIDIA' primero."}
+
+        # Organizar la mejor versión de la bóveda por tecnología
+        best_by_tech = {}
+        for v in vault_versions:
+            tech = v["tech_type"]
+            if tech not in best_by_tech:
+                best_by_tech[tech] = v
+
+        game_target = InstalledGameTarget(name=root.name, platform="Custom", install_path=root)
+        scan = DllDetector.scan_game_upscalers(game_target)
+        dlls = scan.get("dlls", [])
+
+        if not dlls:
+            return {"success": False, "error": "No se encontraron DLLs de escalado en este juego."}
+
+        updated_count = 0
+        skipped_count = 0
+        details = []
+
+        for item in dlls:
+            tech = item["tech_type"]
+            replacement_info = best_by_tech.get(tech)
+            if not replacement_info:
+                skipped_count += 1
+                details.append({
+                    "filename": item["filename"],
+                    "status": "omitido",
+                    "reason": f"No hay versión compatible para {item['tech_label']} en la bóveda"
+                })
+                continue
+
+            res = self.swap_dll(item["full_path"], replacement_info["path"])
+            if res.get("success"):
+                updated_count += 1
+                details.append({
+                    "filename": item["filename"],
+                    "status": "actualizado",
+                    "old_version": res.get("old_version"),
+                    "new_version": res.get("new_version")
+                })
+            else:
+                details.append({
+                    "filename": item["filename"],
+                    "status": "error",
+                    "error": res.get("error")
+                })
+
+        return {
+            "success": updated_count > 0,
+            "updated_count": updated_count,
+            "skipped_count": skipped_count,
+            "details": details,
+            "message": f"Actualización por lotes finalizada: {updated_count} archivo(s) actualizados."
+        }
+
+    def restore_all_in_game(self, game_install_path: str) -> Dict[str, Any]:
+        """
+        Restaura todas las copias de seguridad (.bak) encontradas en el juego a su estado original.
+        """
+        root = Path(game_install_path).resolve()
+        if not root.exists() or not root.is_dir():
+            return {"success": False, "error": f"Directorio no encontrado: {root}"}
+
+        restored_count = 0
+        details = []
+
+        try:
+            for bak in root.rglob("*.dll.bak"):
+                # Quitar el .bak final para obtener la ruta de la DLL destino
+                target_dll = bak.parent / bak.name[:-4]
+                res = self.restore_dll(str(target_dll))
+                if res.get("success"):
+                    restored_count += 1
+                    details.append({
+                        "filename": target_dll.name,
+                        "status": "restaurado",
+                        "version": res.get("restored_version")
+                    })
+                else:
+                    details.append({
+                        "filename": target_dll.name,
+                        "status": "error",
+                        "error": res.get("error")
+                    })
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+        if restored_count == 0:
+            return {"success": False, "error": "No se encontraron copias de seguridad (.bak) para revertir."}
+
+        return {
+            "success": True,
+            "restored_count": restored_count,
+            "details": details,
+            "message": f"Reversión completada: {restored_count} archivo(s) restaurados al original."
+        }
         """
         Descarga automáticamente la última versión oficial de nvngx_dlss.dll
         directamente desde el repositorio oficial del SDK de NVIDIA en GitHub.

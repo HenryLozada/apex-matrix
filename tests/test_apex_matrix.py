@@ -108,6 +108,22 @@ class TestDllDetectorAndSwapper(unittest.TestCase):
         # Comprobar que el archivo volvió a ser el original (el ejecutable de python)
         self.assertEqual(self.mock_dlss.stat().st_size, Path(sys.executable).stat().st_size)
 
+    def test_swap_all_and_restore_all_in_game(self):
+        """Verifica la actualización masiva (ACTUALIZAR TODOS) y reversión masiva (REVERTIR TODOS)."""
+        # Crear versión en la bóveda
+        replacement_dll = self.mock_library / "nvngx_dlss_v3.7.0.dll"
+        replacement_dll.write_bytes(b"NEW_DLSS_VERSION_MOCK_PAYLOAD")
+
+        # 1. Ejecutar swap masivo
+        res = self.swapper.swap_all_in_game(str(self.mock_game_root))
+        self.assertTrue(res["success"])
+        self.assertEqual(res["updated_count"], 1)
+
+        # 2. Ejecutar reversión masiva
+        restore_res = self.swapper.restore_all_in_game(str(self.mock_game_root))
+        self.assertTrue(restore_res["success"])
+        self.assertEqual(restore_res["restored_count"], 1)
+
 
 class TestShaderCleaner(unittest.TestCase):
     def setUp(self):

@@ -66,6 +66,20 @@ class ApexMatrixApi:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def swap_all_in_game(self, game_install_path: str):
+        """Actualiza todas las DLLs de escalado en el juego por lote."""
+        try:
+            return self.swapper.swap_all_in_game(game_install_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def restore_all_in_game(self, game_install_path: str):
+        """Restaura todas las copias de seguridad (.bak) del juego por lote."""
+        try:
+            return self.swapper.restore_all_in_game(game_install_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def download_official_dlss(self):
         """Descarga la última versión oficial de DLSS desde el repositorio de NVIDIA."""
         try:

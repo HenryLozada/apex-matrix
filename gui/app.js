@@ -275,25 +275,42 @@ function renderDlssGames() {
     const card = document.createElement("div");
     card.className = "game-matrix-card";
 
-    let dllsHtml = (game.dlls || []).map(dll => `
-      <div class="dll-tech-item">
-        <div class="tech-tag-group">
-          <span class="tech-badge badge-${dll.tech_type}">${dll.filename}</span>
-          <span class="ver-curr">v${dll.version}</span>
-          ${dll.has_backup ? '<span class="badge-backup" title="Copia original inmutable presente">.BAK</span>' : ''}
-        </div>
-        <div class="tech-actions">
-          ${dll.has_backup ? `
-            <button class="btn-matrix btn-matrix-outline" style="height:24px; padding:0 8px; font-size:9px;" onclick="restoreDll('${escapeJsStr(dll.full_path)}')">
-              REVERTIR
+    const hasAnyBackup = (game.dlls || []).some(d => d.has_backup);
+
+    let dllsHtml = (game.dlls || []).map(dll => {
+      // Determinar si hay una versión disponible en la bóveda para esta tecnología
+      const vaultMatch = appState.libraryVersions.find(v => v.tech_type === dll.tech_type);
+      const isOutdated = vaultMatch && vaultMatch.version !== dll.version;
+
+      let statusBadge = '';
+      if (dll.has_backup) {
+        statusBadge = `<span class="status-badge status-updated" title="Archivo modificado con copia original respaldada (.bak)">ACTUALIZADO (.BAK)</span>`;
+      } else if (isOutdated) {
+        statusBadge = `<span class="status-badge status-available" title="Versión más reciente disponible en la bóveda">DISPONIBLE v${vaultMatch.version}</span>`;
+      } else {
+        statusBadge = `<span class="status-badge status-original" title="Archivo original sin modificar">ORIGINAL</span>`;
+      }
+
+      return `
+        <div class="dll-tech-item">
+          <div class="tech-tag-group">
+            <span class="tech-badge badge-${dll.tech_type}" title="${escapeHtml(dll.filename)}">${escapeHtml(dll.filename)}</span>
+            <span class="ver-curr">v${escapeHtml(dll.version)}</span>
+            ${statusBadge}
+          </div>
+          <div class="tech-actions">
+            ${dll.has_backup ? `
+              <button class="btn-matrix btn-matrix-outline" style="height:24px; padding:0 8px; font-size:9px;" onclick="restoreDll('${escapeJsStr(dll.full_path)}')">
+                REVERTIR
+              </button>
+            ` : ''}
+            <button class="btn-matrix btn-matrix-primary" style="height:24px; padding:0 8px; font-size:9px;" onclick="openSwapModal('${escapeJsStr(game.game_name)}', '${escapeJsStr(dll.full_path)}', '${escapeJsStr(dll.filename)}', '${escapeJsStr(dll.version)}', '${escapeJsStr(dll.tech_type)}', '${escapeJsStr(dll.tech_label)}')">
+              ACTUALIZAR
             </button>
-          ` : ''}
-          <button class="btn-matrix btn-matrix-primary" style="height:24px; padding:0 8px; font-size:9px;" onclick="openSwapModal('${escapeJsStr(game.game_name)}', '${escapeJsStr(dll.full_path)}', '${escapeJsStr(dll.filename)}', '${escapeJsStr(dll.version)}')">
-            ACTUALIZAR
-          </button>
+          </div>
         </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
 
     card.innerHTML = `
       <div class="game-head">
@@ -307,6 +324,16 @@ function renderDlssGames() {
         ${dllsHtml}
       </div>
       <div class="game-card-actions">
+        ${hasAnyBackup ? `
+          <button class="btn-matrix btn-matrix-outline" style="height:26px; padding:0 10px; font-size:9px;" onclick="restoreAllInGame('${escapeJsStr(game.install_path)}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>REVERTIR TODOS</span>
+          </button>
+        ` : ''}
+        <button class="btn-matrix btn-matrix-primary" style="height:26px; padding:0 10px; font-size:9px;" onclick="swapAllInGame('${escapeJsStr(game.install_path)}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span>ACTUALIZAR TODOS</span>
+        </button>
         <button class="btn-matrix btn-matrix-outline" style="height:26px; padding:0 10px; font-size:9px;" onclick="openGameFolder('${escapeJsStr(game.install_path)}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
           <span>EXPLORADOR</span>
@@ -418,8 +445,10 @@ function renderTelemetry(data) {
 }
 
 // 5. Modal de Swapping
-window.openSwapModal = function(gameTitle, targetPath, dllName, currentVer) {
+window.openSwapModal = function(gameTitle, targetPath, dllName, currentVer, techType, techLabel) {
   appState.selectedTargetDll = targetPath;
+  appState.selectedTargetTech = techType || "dlss_sr";
+  appState.selectedTargetTechLabel = techLabel || dllName;
   appState.selectedReplacementPath = null;
 
   dom.swapModalGameTitle.textContent = gameTitle;
@@ -442,13 +471,27 @@ function renderModalVersions() {
   if (appState.libraryVersions.length === 0) {
     dom.modalVersionsList.innerHTML = `
       <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px;">
-        No hay librerías en la bóveda aún. Usa "IMPORTAR DLL" para agregar una versión descargada.
+        No hay librerías en la bóveda aún. Usa "DESCARGAR OFICIAL NVIDIA" o "IMPORTAR DLL".
       </div>
     `;
     return;
   }
 
-  appState.libraryVersions.forEach(ver => {
+  // Filtrar versiones compatibles con la tecnología seleccionada (evitar cruzar DLSS con FSR)
+  const targetTech = appState.selectedTargetTech;
+  let compatibleVersions = appState.libraryVersions.filter(v => v.tech_type === targetTech);
+
+  if (compatibleVersions.length === 0) {
+    dom.modalVersionsList.innerHTML = `
+      <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px; line-height:1.5;">
+        <div style="color:var(--color-accent-orange); font-weight:700; margin-bottom:4px;">No hay versiones de ${escapeHtml(appState.selectedTargetTechLabel || targetTech)} en la bóveda.</div>
+        <div>Las versiones de NVIDIA DLSS solo son compatibles con archivos DLSS. Puedes importar una versión de esta tecnología con "IMPORTAR DLL".</div>
+      </div>
+    `;
+    return;
+  }
+
+  compatibleVersions.forEach(ver => {
     const item = document.createElement("div");
     item.className = "version-option";
     item.innerHTML = `
@@ -504,6 +547,41 @@ window.restoreDll = async function(targetPath) {
     }
   } catch (err) {
     showToast("Error: " + err, "error");
+  }
+};
+
+window.swapAllInGame = async function(gamePath) {
+  showToast("Actualizando todas las librerías del juego con versiones de la bóveda...", "info");
+  try {
+    if (window.pywebview) {
+      const res = await window.pywebview.api.swap_all_in_game(gamePath);
+      if (res && res.success) {
+        showToast(res.message, "success");
+        loadGamesAndUpscalers();
+      } else {
+        showToast(res.error || "No se pudieron actualizar los archivos", "error");
+      }
+    }
+  } catch (err) {
+    showToast("Error en actualización masiva: " + err, "error");
+  }
+};
+
+window.restoreAllInGame = async function(gamePath) {
+  if (!confirm("¿Deseas revertir todas las DLLs modificadas de este juego a su estado original?")) return;
+  showToast("Restaurando archivos originales...", "info");
+  try {
+    if (window.pywebview) {
+      const res = await window.pywebview.api.restore_all_in_game(gamePath);
+      if (res && res.success) {
+        showToast(res.message, "success");
+        loadGamesAndUpscalers();
+      } else {
+        showToast(res.error || "No se pudieron restaurar los archivos", "error");
+      }
+    }
+  } catch (err) {
+    showToast("Error al revertir: " + err, "error");
   }
 };
 
