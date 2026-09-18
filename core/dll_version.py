@@ -55,6 +55,15 @@ class Win32VersionReader:
             build = (ls >> 16) & 0xFFFF
             revision = ls & 0xFFFF
 
+            # Normalización inteligente para ejecutables o mods que empaquetan subversiones en el número mayor (ej. 310 -> 3.1.0)
+            if major == 310:
+                return f"3.1.0.{minor}"
+            elif major == 31:
+                return f"3.1.{minor}.{build}"
+            elif major > 100 and str(major).startswith("3"):
+                s = str(major)
+                return f"{s[0]}.{s[1]}.{s[2:]}.{minor}"
+
             return f"{major}.{minor}.{build}.{revision}"
         except Exception:
             return None

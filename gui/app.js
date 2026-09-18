@@ -618,10 +618,23 @@ function renderModalVersions() {
   compatibleVersions.forEach(ver => {
     const item = document.createElement("div");
     item.className = "version-option";
+
+    // Generar nombre amigable limpio sin redundancia
+    let friendlyName = ver.filename;
+    if (ver.tech_type === "dlss_sr") friendlyName = `NVIDIA DLSS v${ver.version}`;
+    else if (ver.tech_type === "dlss_fg") friendlyName = `DLSS 3 Frame Gen v${ver.version}`;
+    else if (ver.tech_type === "dlss_rr") friendlyName = `DLSS 3.5 Ray Recon v${ver.version}`;
+    else if (ver.tech_type === "xess") friendlyName = `Intel XeSS v${ver.version}`;
+    else if (ver.tech_type === "fsr") {
+      if (ver.filename.includes("framegeneration")) friendlyName = `AMD FSR 3 Frame Gen v${ver.version}`;
+      else if (ver.filename.includes("upscaler")) friendlyName = `AMD FSR Upscaler v${ver.version}`;
+      else friendlyName = `AMD FidelityFX v${ver.version}`;
+    }
+
     item.innerHTML = `
       <div>
-        <div class="ver-opt-title">${escapeHtml(ver.filename)} (v${escapeHtml(ver.version)})</div>
-        <div class="ver-opt-date">Tamaño: ${escapeHtml(ver.size_str)}</div>
+        <div class="ver-opt-title">${escapeHtml(friendlyName)}</div>
+        <div class="ver-opt-date">${escapeHtml(ver.filename)} • ${escapeHtml(ver.size_str)}</div>
       </div>
       <span class="tech-badge badge-${ver.tech_type}">BÓVEDA</span>
     `;
