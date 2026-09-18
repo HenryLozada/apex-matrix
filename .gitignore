@@ -10,6 +10,7 @@ dist/
 *.spec.bak
 
 # Local purge stats & user cache
+library/*.dll
 library/purge_stats.json
 *.log
 
