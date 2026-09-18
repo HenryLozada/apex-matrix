@@ -37,6 +37,7 @@ const dom = {
   dlssLoading: document.getElementById("dlss-loading"),
   dlssEmpty: document.getElementById("dlss-empty"),
   dlssGamesGrid: document.getElementById("dlss-games-grid"),
+  btnDownloadDlss: document.getElementById("btn-download-dlss"),
   btnImportDll: document.getElementById("btn-import-dll"),
   btnOpenLibrary: document.getElementById("btn-open-library"),
 
@@ -147,6 +148,31 @@ function setupEventListeners() {
   dom.modalCloseBtn.addEventListener("click", closeSwapModal);
   dom.btnCancelSwap.addEventListener("click", closeSwapModal);
   dom.btnConfirmSwap.addEventListener("click", executeSwap);
+
+  // Descargar DLSS Oficial desde NVIDIA
+  if (dom.btnDownloadDlss) {
+    dom.btnDownloadDlss.addEventListener("click", async () => {
+      showToast("Conectando con NVIDIA GitHub y descargando última versión oficial...", "info");
+      dom.btnDownloadDlss.disabled = true;
+      try {
+        if (window.pywebview) {
+          const res = await window.pywebview.api.download_official_dlss();
+          if (res && res.success) {
+            showToast(res.message, "success");
+            appState.libraryVersions = await window.pywebview.api.get_library_versions();
+          } else {
+            showToast(res.error || "Error al descargar", "error");
+          }
+        } else {
+          showToast("Función disponible en la aplicación de escritorio.", "info");
+        }
+      } catch (err) {
+        showToast("Error en descarga: " + err, "error");
+      } finally {
+        dom.btnDownloadDlss.disabled = false;
+      }
+    });
+  }
 
   // Importar DLL
   dom.btnImportDll.addEventListener("click", async () => {

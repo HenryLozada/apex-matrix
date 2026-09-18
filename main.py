@@ -66,6 +66,13 @@ class ApexMatrixApi:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def download_official_dlss(self):
+        """Descarga la última versión oficial de DLSS desde el repositorio de NVIDIA."""
+        try:
+            return self.swapper.download_official_dlss()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def import_custom_dll(self):
         """Abre un diálogo nativo de Windows para importar una DLL descargada."""
         if not self._window:

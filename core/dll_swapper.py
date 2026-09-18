@@ -134,13 +134,38 @@ class DllSwapper:
         dest_name = f"{src.stem}_{meta['version']}.dll" if meta["version"] != "Desconocida" else src.name
         dest = self.library_dir / dest_name
 
+    def download_official_dlss(self) -> Dict[str, Any]:
+        """
+        Descarga automáticamente la última versión oficial de nvngx_dlss.dll
+        directamente desde el repositorio oficial del SDK de NVIDIA en GitHub.
+        """
+        import urllib.request
+        url = "https://raw.githubusercontent.com/NVIDIA/DLSS/main/lib/Windows_x86_64/rel/nvngx_dlss.dll"
+        temp_dest = self.library_dir / "nvngx_dlss_downloading.tmp"
+
         try:
-            shutil.copy2(src, dest)
+            req = urllib.request.Request(url, headers={"User-Agent": "ApexMatrix-NVIDIA-Downloader/1.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp, open(temp_dest, "wb") as f:
+                f.write(resp.read())
+
+            meta = Win32VersionReader.get_dll_metadata(temp_dest)
+            ver = meta.get("version", "latest")
+            final_name = f"nvngx_dlss_v{ver}.dll"
+            final_dest = self.library_dir / final_name
+
+            if temp_dest.exists():
+                if final_dest.exists():
+                    final_dest.unlink()
+                temp_dest.rename(final_dest)
+
             return {
                 "success": True,
-                "message": f"Librería importada a la bóveda: {dest.name}",
-                "version": meta["version"],
-                "destination": str(dest)
+                "message": f"Última versión oficial de NVIDIA descargada: {final_name} (v{ver})",
+                "version": ver,
+                "filename": final_name,
+                "path": str(final_dest)
             }
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            if temp_dest.exists():
+                temp_dest.unlink()
+            return {"success": False, "error": f"Error descargando desde NVIDIA: {str(e)}"}
