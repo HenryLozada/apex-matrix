@@ -1,11 +1,12 @@
 """
 Gestor de reemplazo seguro (swapping) y reversión de librerías DLL de escalado.
-Asegura la preservación del archivo original mediante copias .bak inmutables.
+Asegura la preservación del archivo original mediante copias .bak inmutables
+y verificación estricta de compatibilidad de familias de librerías (DLSS / FSR / XeSS).
 """
 
 import shutil
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from core.dll_version import Win32VersionReader
 
 class DllSwapper:
@@ -15,6 +16,39 @@ class DllSwapper:
         else:
             self.library_dir = Path(__file__).resolve().parent.parent / "library"
         self.library_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def is_compatible_replacement(target_filename: str, vault_filename: str) -> bool:
+        """
+        Determina si una versión de la bóveda es compatible con la DLL objetivo del juego
+        para evitar mezclar tecnologías incompatibles (ej. DLSS en FSR o FrameGen en Upscaler).
+        """
+        t = target_filename.lower()
+        v = vault_filename.lower()
+
+        # 1. NVIDIA DLSS Frame Generation
+        if "dlssg" in t:
+            return "dlssg" in v
+        # 2. NVIDIA DLSS Ray Reconstruction
+        if "dlssd" in t:
+            return "dlssd" in v
+        # 3. NVIDIA DLSS Super Resolution
+        if "dlss" in t and "dlssg" not in t and "dlssd" not in t:
+            return "dlss" in v and "dlssg" not in v and "dlssd" not in v
+        # 4. Intel XeSS
+        if "xess" in t:
+            return "xess" in v
+        # 5. AMD Frame Generation
+        if "framegeneration" in t:
+            return "framegeneration" in v
+        # 6. AMD Upscaler
+        if "upscaler" in t:
+            return "upscaler" in v
+        # 7. AMD FidelityFX genérico / DX12 loader
+        if "fidelityfx" in t or "fsr" in t:
+            return ("fidelityfx" in v or "fsr" in v) and "framegeneration" not in v and "upscaler" not in v
+
+        return False
 
     def get_library_versions(self) -> List[Dict[str, Any]]:
         """
@@ -62,6 +96,13 @@ class DllSwapper:
         if not replacement.exists():
             return {"success": False, "error": f"No se encontró la DLL de reemplazo en {replacement}"}
 
+        # Verificación de seguridad de compatibilidad
+        if not self.is_compatible_replacement(target.name, replacement.name):
+            return {
+                "success": False,
+                "error": f"Incompatibilidad detectada: No se puede reemplazar '{target.name}' con '{replacement.name}'. Las librerías deben pertenecer a la misma tecnología y familia."
+            }
+
         try:
             # 1. Crear copia de respaldo inmutable .bak si aún no existe
             backup_file = target.with_suffix(".dll.bak")
@@ -104,7 +145,6 @@ class DllSwapper:
             return {"success": False, "error": "No existe copia de seguridad (.bak) para este archivo."}
 
         try:
-            # Restaurar el archivo original
             shutil.copy2(backup_file, target)
             meta = Win32VersionReader.get_dll_metadata(target)
 
@@ -131,6 +171,8 @@ class DllSwapper:
             return {"success": False, "error": "El archivo especificado no existe."}
 
         meta = Win32VersionReader.get_dll_metadata(src)
+        dest = self.library_dir / src.name
+
         try:
             shutil.copy2(src, dest)
             return {
@@ -145,7 +187,7 @@ class DllSwapper:
     def swap_all_in_game(self, game_install_path: str) -> Dict[str, Any]:
         """
         Actualiza todas las DLLs de escalado en el juego utilizando la versión más reciente
-        compatible en la bóveda para cada tecnología correspondiente.
+        compatible en la bóveda para cada familia de librería correspondiente.
         """
         from core.dll_detector import DllDetector
         from core.game_scanner import InstalledGameTarget
@@ -156,14 +198,7 @@ class DllSwapper:
 
         vault_versions = self.get_library_versions()
         if not vault_versions:
-            return {"success": False, "error": "No hay librerías en la bóveda. Haz clic en 'DESCARGAR OFICIAL NVIDIA' primero."}
-
-        # Organizar la mejor versión de la bóveda por tecnología
-        best_by_tech = {}
-        for v in vault_versions:
-            tech = v["tech_type"]
-            if tech not in best_by_tech:
-                best_by_tech[tech] = v
+            return {"success": False, "error": "No hay librerías en la bóveda. Descárgalas desde el CATÁLOGO primero."}
 
         game_target = InstalledGameTarget(name=root.name, platform="Custom", install_path=root)
         scan = DllDetector.scan_game_upscalers(game_target)
@@ -177,17 +212,21 @@ class DllSwapper:
         details = []
 
         for item in dlls:
-            tech = item["tech_type"]
-            replacement_info = best_by_tech.get(tech)
-            if not replacement_info:
+            # Encontrar la mejor versión compatible en la bóveda para este archivo específico
+            matching_vault = [
+                v for v in vault_versions
+                if self.is_compatible_replacement(item["filename"], v["filename"])
+            ]
+            if not matching_vault:
                 skipped_count += 1
                 details.append({
                     "filename": item["filename"],
                     "status": "omitido",
-                    "reason": f"No hay versión compatible para {item['tech_label']} en la bóveda"
+                    "reason": f"No hay versión compatible para '{item['filename']}' en la bóveda"
                 })
                 continue
 
+            replacement_info = matching_vault[0]
             res = self.swap_dll(item["full_path"], replacement_info["path"])
             if res.get("success"):
                 updated_count += 1
@@ -225,7 +264,6 @@ class DllSwapper:
 
         try:
             for bak in root.rglob("*.dll.bak"):
-                # Quitar el .bak final para obtener la ruta de la DLL destino
                 target_dll = bak.parent / bak.name[:-4]
                 res = self.restore_dll(str(target_dll))
                 if res.get("success"):
@@ -253,6 +291,8 @@ class DllSwapper:
             "details": details,
             "message": f"Reversión completada: {restored_count} archivo(s) restaurados al original."
         }
+
+    def download_official_dlss(self) -> Dict[str, Any]:
         """
         Descarga automáticamente la última versión oficial de nvngx_dlss.dll
         directamente desde el repositorio oficial del SDK de NVIDIA en GitHub.

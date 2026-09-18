@@ -247,10 +247,34 @@ class TestDlssCatalogManager(unittest.TestCase):
         self.assertIn("is_downloaded", first)
         self.assertFalse(first["is_downloaded"])
 
+        # Verificar presencia de NVIDIA, Intel y AMD
+        vendors = {item.get("vendor") for item in items}
+        self.assertIn("NVIDIA", vendors)
+        self.assertIn("Intel", vendors)
+        self.assertIn("AMD", vendors)
+
     def test_download_invalid_catalog_id(self):
         res = self.catalog.download_catalog_item("non_existent_id_xyz")
         self.assertFalse(res["success"])
         self.assertIn("error", res)
+
+    def test_swapper_compatibility_logic(self):
+        """Verifica que el swapper impida mezclar familias incompatibles (DLSS vs FSR vs XeSS)."""
+        # DLSS SR
+        self.assertTrue(DllSwapper.is_compatible_replacement("nvngx_dlss.dll", "nvngx_dlss_v3.7.20.0.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("nvngx_dlss.dll", "nvngx_dlssg_v3.7.10.0.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("nvngx_dlss.dll", "libxess.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("nvngx_dlss.dll", "amd_fidelityfx_dx12.dll"))
+
+        # Intel XeSS
+        self.assertTrue(DllSwapper.is_compatible_replacement("libxess.dll", "libxess_v1.3.1.0.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("libxess.dll", "nvngx_dlss.dll"))
+
+        # AMD FidelityFX (FSR)
+        self.assertTrue(DllSwapper.is_compatible_replacement("amd_fidelityfx_dx12.dll", "amd_fidelityfx_dx12_v1.0.1.dll"))
+        self.assertTrue(DllSwapper.is_compatible_replacement("amd_fidelityfx_framegeneration_dx12.dll", "amd_fidelityfx_framegeneration_dx12_v3.1.0.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("amd_fidelityfx_dx12.dll", "amd_fidelityfx_framegeneration_dx12.dll"))
+        self.assertFalse(DllSwapper.is_compatible_replacement("amd_fidelityfx_dx12.dll", "nvngx_dlss.dll"))
 
 
 class TestGameLauncher(unittest.TestCase):

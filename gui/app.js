@@ -13,7 +13,9 @@ let appState = {
   telemetryData: null,
   libraryVersions: [],
   catalogItems: [],
+  catalogVendorFilter: "all",
   selectedTargetDll: null,
+  selectedTargetDllName: "",
   selectedReplacementPath: null
 };
 
@@ -35,7 +37,7 @@ const dom = {
 
   // DLSS Tab
   dlssSearchInput: document.getElementById("dlss-search-input"),
-  filterChips: document.querySelectorAll(".filter-chip:not(.status-chip)"),
+  filterChips: document.querySelectorAll(".filter-chip:not(.status-chip):not(.catalog-filter-chip)"),
   statusChips: document.querySelectorAll(".status-chip"),
   dlssLoading: document.getElementById("dlss-loading"),
   dlssEmpty: document.getElementById("dlss-empty"),
@@ -88,6 +90,11 @@ const dom = {
   catalogModalClose: document.getElementById("catalog-modal-close"),
   catalogModalDone: document.getElementById("catalog-modal-done"),
   catalogItemsList: document.getElementById("catalog-items-list"),
+  catCountAll: document.getElementById("cat-count-all"),
+  catCountNvidia: document.getElementById("cat-count-nvidia"),
+  catCountIntel: document.getElementById("cat-count-intel"),
+  catCountAmd: document.getElementById("cat-count-amd"),
+  catVendorChips: document.querySelectorAll(".catalog-filter-chip"),
 
   // Toast
   toastContainer: document.getElementById("toast-container")
@@ -172,7 +179,7 @@ function setupEventListeners() {
   dom.btnCancelSwap.addEventListener("click", closeSwapModal);
   dom.btnConfirmSwap.addEventListener("click", executeSwap);
 
-  // Acciones Modal Catálogo DLSS
+  // Acciones Modal Catálogo Multi-Tecnología
   if (dom.btnOpenCatalog) {
     dom.btnOpenCatalog.addEventListener("click", openCatalogModal);
   }
@@ -182,6 +189,16 @@ function setupEventListeners() {
   if (dom.catalogModalDone) {
     dom.catalogModalDone.addEventListener("click", closeCatalogModal);
   }
+
+  // Filtros de Fabricante en el Catálogo
+  dom.catVendorChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      dom.catVendorChips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      appState.catalogVendorFilter = chip.getAttribute("data-cat-vendor");
+      renderCatalogItems();
+    });
+  });
 
   // Agregar Carpeta de Juego
   if (dom.btnAddFolder) {
@@ -528,6 +545,7 @@ function renderTelemetry(data) {
 // 5. Modal de Swapping
 window.openSwapModal = function(gameTitle, targetPath, dllName, currentVer, techType, techLabel) {
   appState.selectedTargetDll = targetPath;
+  appState.selectedTargetDllName = dllName || "";
   appState.selectedTargetTech = techType || "dlss_sr";
   appState.selectedTargetTechLabel = techLabel || dllName;
   appState.selectedReplacementPath = null;
@@ -551,22 +569,47 @@ function renderModalVersions() {
 
   if (appState.libraryVersions.length === 0) {
     dom.modalVersionsList.innerHTML = `
-      <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px;">
-        No hay librerías en la bóveda aún. Usa "DESCARGAR OFICIAL NVIDIA" o "IMPORTAR DLL".
+      <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px; line-height:1.6;">
+        <div style="margin-bottom:8px;">No hay librerías en la bóveda aún.</div>
+        <button class="btn-matrix btn-matrix-primary" onclick="closeSwapModal(); openCatalogModal();" style="height:26px; padding:0 12px; font-size:10px;">
+          ABRIR CATÁLOGO DE VERSIONES
+        </button>
       </div>
     `;
     return;
   }
 
-  // Filtrar versiones compatibles con la tecnología seleccionada (evitar cruzar DLSS con FSR)
+  // Filtrar versiones compatibles con la familia específica de la DLL (evitar cruzar DLSS con FSR, FrameGen con Upscaler, etc.)
+  const targetName = (appState.selectedTargetDllName || "").toLowerCase();
   const targetTech = appState.selectedTargetTech;
-  let compatibleVersions = appState.libraryVersions.filter(v => v.tech_type === targetTech);
+
+  let compatibleVersions = appState.libraryVersions.filter(v => {
+    const vName = (v.filename || "").toLowerCase();
+    if (targetName.includes("dlssg")) return vName.includes("dlssg");
+    if (targetName.includes("dlssd")) return vName.includes("dlssd");
+    if (targetName.includes("dlss")) return vName.includes("dlss") && !vName.includes("dlssg") && !vName.includes("dlssd");
+    if (targetName.includes("xess")) return vName.includes("xess");
+    if (targetName.includes("framegeneration")) return vName.includes("framegeneration");
+    if (targetName.includes("upscaler")) return vName.includes("upscaler");
+    if (targetName.includes("fidelityfx") || targetName.includes("fsr")) {
+      return (vName.includes("fidelityfx") || vName.includes("fsr")) && !vName.includes("framegeneration") && !vName.includes("upscaler");
+    }
+    return v.tech_type === targetTech;
+  });
 
   if (compatibleVersions.length === 0) {
     dom.modalVersionsList.innerHTML = `
-      <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px; line-height:1.5;">
-        <div style="color:var(--color-accent-orange); font-weight:700; margin-bottom:4px;">No hay versiones de ${escapeHtml(appState.selectedTargetTechLabel || targetTech)} en la bóveda.</div>
-        <div>Las versiones de NVIDIA DLSS solo son compatibles con archivos DLSS. Puedes importar una versión de esta tecnología con "IMPORTAR DLL".</div>
+      <div style="padding:16px; color:var(--color-text-dim); text-align:center; font-size:11px; line-height:1.6;">
+        <div style="color:var(--color-accent-orange); font-weight:700; margin-bottom:4px;">No hay versiones compatibles para "${escapeHtml(appState.selectedTargetDllName)}" en la bóveda.</div>
+        <div style="margin-bottom:10px;">Cada tecnología (NVIDIA DLSS, Intel XeSS o AMD FSR) requiere archivos oficiales de su misma familia. Puedes descargarlas desde el Catálogo o importar tus propios archivos.</div>
+        <div style="display:flex; justify-content:center; gap:8px;">
+          <button class="btn-matrix btn-matrix-primary" onclick="closeSwapModal(); openCatalogModal();" style="height:26px; padding:0 12px; font-size:10px;">
+            CATÁLOGO DE VERSIONES
+          </button>
+          <button class="btn-matrix btn-matrix-outline" onclick="closeSwapModal(); dom.btnImportDll.click();" style="height:26px; padding:0 12px; font-size:10px;">
+            IMPORTAR DLL
+          </button>
+        </div>
       </div>
     `;
     return;
@@ -724,7 +767,7 @@ async function loadCatalogItems() {
   if (!dom.catalogItemsList) return;
   dom.catalogItemsList.innerHTML = `
     <div style="padding:20px; text-align:center; color:var(--color-text-dim); font-size:11px;">
-      Cargando catálogo oficial de NVIDIA SDK...
+      Cargando catálogo oficial de versiones oficiales (NVIDIA / Intel / AMD)...
     </div>
   `;
   try {
@@ -732,11 +775,24 @@ async function loadCatalogItems() {
       appState.catalogItems = await window.pywebview.api.get_dlss_catalog();
     } else {
       appState.catalogItems = [
-        { id: "dlss_3_7_20", name: "NVIDIA DLSS v3.7.20", version: "3.7.20.0", category: "Super Resolution", tag: "MÁXIMA NITIDEZ", description: "Última versión optimizada con Preset E. Gran reducción de ghosting y artefactos en movimiento.", is_downloaded: false },
-        { id: "dlss_3_7_10", name: "NVIDIA DLSS v3.7.10", version: "3.7.10.0", category: "Super Resolution", tag: "OFICIAL SDK", description: "Versión oficial del SDK de NVIDIA. Muy alta estabilidad en títulos Unreal Engine 5.", is_downloaded: true },
-        { id: "dlss_fg_3_7_10", name: "NVIDIA DLSS 3 Frame Generation", version: "3.7.10.0", category: "Frame Generation", tag: "RTX 40/50 SERIES", description: "Librería oficial de generación de fotogramas por hardware para duplicar los FPS.", is_downloaded: false }
+        { id: "dlss_3_7_20", vendor: "NVIDIA", tech_type: "dlss_sr", name: "NVIDIA DLSS v3.7.20", version: "3.7.20.0", category: "Super Resolution", tag: "MÁXIMA NITIDEZ", description: "Última versión optimizada con Preset E. Gran reducción de ghosting y artefactos en movimiento.", is_downloaded: false },
+        { id: "dlss_3_7_10", vendor: "NVIDIA", tech_type: "dlss_sr", name: "NVIDIA DLSS v3.7.10", version: "3.7.10.0", category: "Super Resolution", tag: "OFICIAL SDK", description: "Versión oficial del SDK de NVIDIA. Muy alta estabilidad en títulos Unreal Engine 5.", is_downloaded: true },
+        { id: "xess_1_3_1", vendor: "Intel", tech_type: "xess", name: "Intel XeSS v1.3.1", version: "1.3.1.0", category: "Intel XeSS", tag: "MULTI-GPU IA", description: "Escalado por IA oficial de Intel con algoritmos XMX y DP4a. Compatible con GPUs Arc, RTX, GTX y Radeon.", is_downloaded: false },
+        { id: "amd_fsr_fg_dx12", vendor: "AMD", tech_type: "fsr", name: "AMD FidelityFX Frame Generation DX12", version: "3.1.0.0", category: "AMD FSR", tag: "FRAME GEN ABIERTO", description: "Generación de fotogramas abierta de AMD para DirectX 12. Duplica los FPS sin requerir hardware exclusivo.", is_downloaded: false }
       ];
     }
+
+    // Actualizar contadores por fabricante
+    const total = (appState.catalogItems || []).length;
+    const nvidias = (appState.catalogItems || []).filter(i => i.vendor === "NVIDIA").length;
+    const intels = (appState.catalogItems || []).filter(i => i.vendor === "Intel").length;
+    const amds = (appState.catalogItems || []).filter(i => i.vendor === "AMD").length;
+
+    if (dom.catCountAll) dom.catCountAll.textContent = total;
+    if (dom.catCountNvidia) dom.catCountNvidia.textContent = nvidias;
+    if (dom.catCountIntel) dom.catCountIntel.textContent = intels;
+    if (dom.catCountAmd) dom.catCountAmd.textContent = amds;
+
     renderCatalogItems();
   } catch (err) {
     dom.catalogItemsList.innerHTML = `
@@ -751,13 +807,32 @@ function renderCatalogItems() {
   if (!dom.catalogItemsList) return;
   dom.catalogItemsList.innerHTML = "";
 
-  (appState.catalogItems || []).forEach(item => {
+  const items = (appState.catalogItems || []).filter(item => {
+    if (appState.catalogVendorFilter !== "all" && item.vendor !== appState.catalogVendorFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  if (items.length === 0) {
+    dom.catalogItemsList.innerHTML = `
+      <div style="padding:20px; text-align:center; color:var(--color-text-dim); font-size:11px;">
+        No hay versiones disponibles en esta categoría.
+      </div>
+    `;
+    return;
+  }
+
+  items.forEach(item => {
     const card = document.createElement("div");
     card.className = "catalog-card";
+    const badgeClass = item.vendor === "NVIDIA" ? "badge-dlss_sr" : (item.vendor === "Intel" ? "badge-xess" : "badge-fsr");
+
     card.innerHTML = `
       <div class="catalog-card-info">
         <div class="catalog-card-header">
           <span class="catalog-card-title">${escapeHtml(item.name)}</span>
+          <span class="tech-badge ${badgeClass}">${escapeHtml(item.vendor || 'SDK')}</span>
           <span class="catalog-card-tag">${escapeHtml(item.tag || item.category)}</span>
         </div>
         <div class="catalog-card-desc">${escapeHtml(item.description)}</div>

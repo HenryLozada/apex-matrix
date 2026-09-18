@@ -111,9 +111,9 @@
           </div>
 
           <div class="toolbar-actions">
-            <button id="btn-open-catalog" class="btn-matrix btn-matrix-primary" title="Catálogo de versiones oficiales de DLSS, Frame Gen y Ray Reconstruction">
+            <button id="btn-open-catalog" class="btn-matrix btn-matrix-primary" title="Catálogo multi-tecnología de versiones oficiales DLSS, FSR y XeSS">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>CATÁLOGO DLSS</span>
+              <span>CATÁLOGO VERSIONES</span>
             </button>
             <button id="btn-add-folder" class="btn-matrix btn-matrix-cyan" title="Agregar carpeta de juego manual o directorio de juegos">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
@@ -293,20 +293,29 @@
     </div>
   </div>
 
-  <!-- Modal Catálogo de Versiones DLSS -->
+  <!-- Modal Catálogo Multi-Tecnología (DLSS / FSR / XeSS) -->
   <div id="catalog-modal" class="matrix-modal-backdrop hidden">
     <div class="matrix-modal catalog-modal-dialog">
       <div class="modal-head">
         <div class="modal-title-group">
-          <span class="modal-tag">NVIDIA AI UPSCALING BUNDLE</span>
-          <h3 class="modal-title">CATÁLOGO OFICIAL DE VERSIONES DLSS</h3>
+          <span class="modal-tag">MULTI-VENDOR HARDWARE BUNDLE</span>
+          <h3 class="modal-title">CATÁLOGO DE ESCALADO (DLSS / FSR / XeSS)</h3>
         </div>
         <button id="catalog-modal-close" class="modal-close">&times;</button>
       </div>
       <div class="modal-body">
         <p class="catalog-modal-intro">
-          Descarga versiones verificadas directamente a la bóveda local para actualizarlas en cualquiera de tus juegos con un solo clic.
+          Descarga versiones oficiales y verificadas de <strong>NVIDIA DLSS</strong>, <strong>Intel XeSS</strong> y <strong>AMD FidelityFX FSR</strong> directamente a la bóveda para actualizar tus juegos de forma 100% segura.
         </p>
+
+        <!-- Filtros de Fabricante en el Catálogo -->
+        <div class="filter-group catalog-filter-group" style="margin-bottom: 12px;">
+          <button class="filter-chip catalog-filter-chip active" data-cat-vendor="all">TODOS (<span id="cat-count-all">0</span>)</button>
+          <button class="filter-chip catalog-filter-chip" data-cat-vendor="NVIDIA">NVIDIA DLSS (<span id="cat-count-nvidia">0</span>)</button>
+          <button class="filter-chip catalog-filter-chip" data-cat-vendor="Intel">INTEL XeSS (<span id="cat-count-intel">0</span>)</button>
+          <button class="filter-chip catalog-filter-chip" data-cat-vendor="AMD">AMD FIDELITYFX (<span id="cat-count-amd">0</span>)</button>
+        </div>
+
         <div id="catalog-items-list" class="catalog-items-list">
           <!-- Renderizado dinámico -->
         </div>
