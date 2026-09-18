@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APEX MATRIX // DLSS Swapper & ShaderPurge — NVIDIA Power Green</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Fondo de rejilla geométrica GPU -->
+  <div class="matrix-bg-grid"></div>
+
+  <div class="app-container">
+    <!-- Header Principal -->
+    <header class="matrix-header">
+      <div class="header-brand">
+        <div class="brand-badge">
+          <!-- GPU Silicon Chip SVG -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#76b900" stroke-width="2.2">
+            <rect x="4" y="4" width="16" height="16" rx="1" />
+            <rect x="9" y="9" width="6" height="6" fill="#76b900" />
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" />
+          </svg>
+        </div>
+        <div class="brand-meta">
+          <div class="brand-topline">
+            <span class="brand-company">NVIDIA POWER GREEN</span>
+            <span class="brand-chip">PRECISION SUITE V1.0</span>
+          </div>
+          <h1 class="brand-title">APEX MATRIX // <span class="highlight">DLSS & SHADERPURGE</span></h1>
+        </div>
+      </div>
+
+      <!-- Navegación de Pestañas HUD -->
+      <nav class="matrix-tabs">
+        <button class="tab-btn active" data-tab="dlss">
+          <span class="tab-num">01</span>
+          <span class="tab-title">DLSS & ESCALADO AI</span>
+        </button>
+        <button class="tab-btn" data-tab="shaders">
+          <span class="tab-num">02</span>
+          <span class="tab-title">SHADER PURGE (<span id="tab-cache-size">0 MB</span>)</span>
+        </button>
+        <button class="tab-btn" data-tab="telemetry">
+          <span class="tab-num">03</span>
+          <span class="tab-title">TELEMETRÍA GPU</span>
+        </button>
+      </nav>
+
+      <!-- Controles Globales -->
+      <div class="header-actions">
+        <button id="btn-global-refresh" class="btn-matrix btn-matrix-outline" title="Refrescar datos y escanear juegos">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span>SINCRONIZAR</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Barra de Telemetría Rápida -->
+    <div class="matrix-telemetry-bar">
+      <div class="telem-item">
+        <span class="telem-lbl">GPU ACTIVA:</span>
+        <span class="telem-val highlight-green" id="telem-gpu-name">Detectando GPU...</span>
+      </div>
+      <div class="telem-sep"></div>
+      <div class="telem-item">
+        <span class="telem-lbl">DRIVER:</span>
+        <span class="telem-val" id="telem-gpu-driver">--</span>
+      </div>
+      <div class="telem-sep"></div>
+      <div class="telem-item">
+        <span class="telem-lbl">CACHÉ DE SHADERS:</span>
+        <span class="telem-val highlight-orange" id="telem-cache-total">Calculando...</span>
+      </div>
+      <div class="telem-sep"></div>
+      <div class="telem-item">
+        <span class="telem-lbl">ESPACIO PURGADO HISTÓRICO:</span>
+        <span class="telem-val highlight-bright" id="telem-lifetime-reclaimed">0 B</span>
+      </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="matrix-main">
+      
+      <!-- ================= PESTAÑA 01: DLSS & ESCALADO AI ================= -->
+      <section id="view-dlss" class="tab-view active">
+        <!-- Sub-barra de controles DLSS -->
+        <div class="view-toolbar">
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#76b900" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="dlss-search-input" placeholder="Buscar juego con DLSS / FSR / XeSS..." />
+          </div>
+
+          <div class="filter-group">
+            <button class="filter-chip active" data-filter="all">TODOS (<span id="count-all-dlss">0</span>)</button>
+            <button class="filter-chip" data-filter="dlss_sr">DLSS SR (<span id="count-dlss-sr">0</span>)</button>
+            <button class="filter-chip" data-filter="dlss_fg">FRAME GEN (<span id="count-dlss-fg">0</span>)</button>
+            <button class="filter-chip" data-filter="dlss_rr">RAY RECON (<span id="count-dlss-rr">0</span>)</button>
+            <button class="filter-chip" data-filter="xess">XeSS (<span id="count-xess">0</span>)</button>
+            <button class="filter-chip" data-filter="fsr">FSR (<span id="count-fsr">0</span>)</button>
+          </div>
+
+          <div class="toolbar-actions">
+            <button id="btn-import-dll" class="btn-matrix btn-matrix-cyan" title="Importar versión de DLL a la bóveda">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>IMPORTAR DLL</span>
+            </button>
+            <button id="btn-open-library" class="btn-matrix btn-matrix-outline" title="Abrir carpeta de la bóveda">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>BÓVEDA</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grid de Juegos con Tecnologías de Escalado -->
+        <div class="games-container">
+          <div id="dlss-loading" class="matrix-loading">
+            <div class="spinner-die"></div>
+            <p>ESCANEANDO DIRECTORIOS DE JUEGOS Y ANALIZANDO CABECERAS PE/WIN32...</p>
+          </div>
+
+          <div id="dlss-empty" class="matrix-empty hidden">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5e5e5e" stroke-width="1.5"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 15h6"/></svg>
+            <h3>NO SE DETECTARON JUEGOS CON ESCALADO EN ESTA CATEGORÍA</h3>
+            <p>Los juegos con DLSS, Frame Gen, FSR o XeSS aparecerán aquí automáticamente al sincronizar.</p>
+          </div>
+
+          <div id="dlss-games-grid" class="dlss-grid hidden"></div>
+        </div>
+      </section>
+
+      <!-- ================= PESTAÑA 02: SHADER PURGE & CACHE CLEANER ================= -->
+      <section id="view-shaders" class="tab-view">
+        <div class="shader-hero-card">
+          <div class="hero-left">
+            <div class="hero-tag">LIMPIEZA DE RENDIMIENTO GPU // CERO STUTTERING</div>
+            <h2 class="hero-title">PURGADOR DE CACHÉ DE SHADERS</h2>
+            <p class="hero-desc">
+              La caché de shaders compilada se degrada y acumula gigabytes de archivos obsoletos tras cada actualización de controladores de GPU o parches de juegos. Purgar esta caché obliga al driver a recompilar limpiamente, eliminando tirones y liberando almacenamiento ultrarrápido en SSDs.
+            </p>
+            <div class="hero-actions">
+              <button id="btn-purge-all" class="btn-matrix btn-matrix-primary btn-large">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>PURGAR TODAS LAS CACHÉS SELECCIONADAS</span>
+              </button>
+              <button id="btn-rescan-shaders" class="btn-matrix btn-matrix-outline">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                <span>RECALCULAR TAMAÑO</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <div class="reclaim-metric-card">
+              <span class="metric-label">ESPACIO LIBERABLE INMEDIATO</span>
+              <span class="metric-number" id="shader-hero-total">0.00 GB</span>
+              <span class="metric-sub" id="shader-hero-files">0 archivos analizados</span>
+              <div class="metric-safety-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#bff230" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>PROTECCIÓN DE ARCHIVOS EN CALIENTE ACTIVA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de Categorías de Caché de Shaders -->
+        <div class="shader-categories-grid" id="shader-categories-container">
+          <!-- Tarjetas renderizadas dinámicamente -->
+        </div>
+      </section>
+
+      <!-- ================= PESTAÑA 03: TELEMETRÍA GPU ================= -->
+      <section id="view-telemetry" class="tab-view">
+        <div class="telemetry-deck">
+          <div class="telemetry-card">
+            <div class="card-head">
+              <span class="card-tag">SILICON ARCHITECTURE</span>
+              <h3 class="card-title">PROCESADOR GRÁFICO PRINCIPAL</h3>
+            </div>
+            <div class="card-body">
+              <div class="prop-row">
+                <span class="prop-k">NOMBRE:</span>
+                <span class="prop-v highlight-green" id="telem-card-name">--</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">MEMORIA VRAM:</span>
+                <span class="prop-v" id="telem-card-vram">--</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">VERSIÓN DE DRIVER:</span>
+                <span class="prop-v highlight-cyan" id="telem-card-driver">--</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">NVIDIA DLSS COMPATIBLE:</span>
+                <span class="prop-v" id="telem-card-dlss-support">--</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">DLSS FRAME GENERATION:</span>
+                <span class="prop-v" id="telem-card-fg-support">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="telemetry-card">
+            <div class="card-head">
+              <span class="card-tag">STORAGE & HEALTH METRICS</span>
+              <h3 class="card-title">ESTADO DE OPTIMIZACIÓN</h3>
+            </div>
+            <div class="card-body">
+              <div class="prop-row">
+                <span class="prop-k">ESTADO DE CACHÉ DE SHADERS:</span>
+                <span class="prop-v highlight-orange" id="telem-card-cache-status">Saludable</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">TOTAL PURGADO HISTÓRICO:</span>
+                <span class="prop-v highlight-bright" id="telem-card-total-reclaimed">0 B</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">ARQUITECTURA DEL SO:</span>
+                <span class="prop-v" id="telem-card-os">Windows 64-Bit</span>
+              </div>
+              <div class="prop-row">
+                <span class="prop-k">PROTECCIÓN DE BACKUPS .BAK:</span>
+                <span class="prop-v highlight-green">Habilitada (Inmutable)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal para Swapping / Actualización de DLL -->
+  <div id="swap-modal" class="matrix-modal-backdrop hidden">
+    <div class="matrix-modal">
+      <div class="modal-head">
+        <div class="modal-title-group">
+          <span class="modal-tag">ACTUALIZACIÓN & REEMPLAZO SEGURO</span>
+          <h3 class="modal-title" id="swap-modal-game-title">Juego Objetivo</h3>
+        </div>
+        <button id="modal-close-btn" class="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-info-box">
+          <div class="info-row">
+            <span class="info-k">Librería actual:</span>
+            <span class="info-v" id="modal-target-dll-name">nvngx_dlss.dll</span>
+          </div>
+          <div class="info-row">
+            <span class="info-k">Versión instalada:</span>
+            <span class="info-v highlight-orange" id="modal-target-curr-ver">v3.1.1.0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-k">Ubicación física:</span>
+            <span class="info-v code-path" id="modal-target-path">C:\...</span>
+          </div>
+        </div>
+
+        <div class="version-select-section">
+          <label class="section-label">SELECCIONAR NUEVA VERSIÓN DE LA BÓVEDA:</label>
+          <div id="modal-versions-list" class="versions-list">
+            <!-- Renderizado dinámico de versiones disponibles -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-cancel-swap" class="btn-matrix btn-matrix-outline">CANCELAR</button>
+        <button id="btn-confirm-swap" class="btn-matrix btn-matrix-primary" disabled>
+          <span>APLICAR SWAP (CON BACKUP .BAK)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Notificaciones Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

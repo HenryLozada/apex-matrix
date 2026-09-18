@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# PyInstaller / Packaging artifacts
+build/
+dist/
+*.spec.bak
+
+# Local purge stats & user cache
+library/purge_stats.json
+*.log
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+
+# IDEs & Editor configurations
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

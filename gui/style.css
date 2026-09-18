@@ -1,0 +1,1001 @@
+/* ==========================================================================
+   APEX MATRIX // NVIDIA POWER GREEN DESIGN SYSTEM
+   High-Contrast, Pure Accent #76b900 / #bff230, Sharp 2px Corners
+   ========================================================================== */
+
+:root {
+  --color-primary: #000000;
+  --color-secondary: #ffffff;
+  --color-tertiary: #76b900;       /* Verde NVIDIA */
+  --color-neutral: #1a1a1a;        /* Superficie contenedor */
+  --color-surface-card: #121212;   /* Fondo de tarjeta */
+  --color-surface-alt: #161616;
+  --color-surface-green: #bff230;  /* Verde Neón Claro */
+  --color-accent-orange: #df6500;  /* Acento advertencia / secundario */
+  --color-border: #2c2c2c;
+  --color-border-subtle: #1e1e1e;
+  --color-border-green: #76b900;
+  --color-text-dim: #8e8e8e;
+  --color-text-muted: #646464;
+
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+
+  --radius-sharp: 2px;
+  --transition-fast: 0.15s ease;
+}
+
+/* Reset básico */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  user-select: none;
+  height: 100vh;
+}
+
+/* Fondo de Rejilla GPU */
+.matrix-bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(118, 185, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(118, 185, 0, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Contenedor de la Aplicación */
+.app-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Header */
+.matrix-header {
+  height: 64px;
+  background: var(--color-neutral);
+  border-bottom: 2px solid var(--color-border-green);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-badge {
+  width: 38px;
+  height: 38px;
+  background: #0d0d0d;
+  border: 1px solid var(--color-border-green);
+  border-radius: var(--radius-sharp);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-topline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-company {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--color-tertiary);
+}
+
+.brand-chip {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  background: #000000;
+  padding: 1px 5px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+  border-radius: var(--radius-sharp);
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.highlight {
+  color: var(--color-tertiary);
+}
+
+/* Navegación por Pestañas */
+.matrix-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.tab-btn {
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-text-dim);
+  padding: 0 16px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 3px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  color: var(--color-secondary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tab-btn.active {
+  color: var(--color-secondary);
+  border-bottom-color: var(--color-surface-green);
+  background: rgba(191, 242, 48, 0.05);
+}
+
+.tab-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-tertiary);
+}
+
+/* Barra de Telemetría Rápida */
+.matrix-telemetry-bar {
+  height: 36px;
+  background: #090909;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.telem-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.telem-lbl {
+  color: var(--color-text-muted);
+}
+
+.telem-val {
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.highlight-green {
+  color: var(--color-tertiary);
+}
+
+.highlight-bright {
+  color: var(--color-surface-green);
+}
+
+.highlight-orange {
+  color: var(--color-accent-orange);
+}
+
+.highlight-cyan {
+  color: #00d8ff;
+}
+
+.telem-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--color-border);
+  margin: 0 16px;
+}
+
+/* Botones con Arquitectura NVIDIA */
+.btn-matrix {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-sharp);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+}
+
+.btn-matrix-primary {
+  background: var(--color-tertiary);
+  color: #000000;
+  border: 1px solid var(--color-tertiary);
+}
+
+.btn-matrix-primary:hover:not(:disabled) {
+  background: var(--color-surface-green);
+  border-color: var(--color-surface-green);
+}
+
+.btn-matrix-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-matrix-outline {
+  background: transparent;
+  color: var(--color-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-matrix-outline:hover {
+  border-color: var(--color-tertiary);
+  color: var(--color-tertiary);
+}
+
+.btn-matrix-cyan {
+  background: transparent;
+  color: var(--color-surface-green);
+  border: 1px solid var(--color-surface-green);
+}
+
+.btn-matrix-cyan:hover {
+  background: rgba(191, 242, 48, 0.1);
+}
+
+.btn-large {
+  height: 42px;
+  padding: 0 20px;
+  font-size: 12px;
+}
+
+/* Contenido Principal */
+.matrix-main {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.tab-view {
+  display: none;
+  height: 100%;
+  flex-direction: column;
+}
+
+.tab-view.active {
+  display: flex;
+}
+
+/* Toolbar de Filtros & Búsqueda */
+.view-toolbar {
+  height: 52px;
+  background: var(--color-neutral);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #0d0d0d;
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sharp);
+  width: 320px;
+}
+
+.search-box:focus-within {
+  border-color: var(--color-tertiary);
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 12px;
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-chip {
+  background: #0d0d0d;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+  color: #ffffff;
+  border-color: var(--color-tertiary);
+}
+
+.filter-chip.active {
+  background: rgba(118, 185, 0, 0.15);
+  border-color: var(--color-tertiary);
+  color: var(--color-surface-green);
+}
+
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Grid de Juegos DLSS */
+.games-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.dlss-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+.game-matrix-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color var(--transition-fast);
+}
+
+.game-matrix-card:hover {
+  border-color: var(--color-tertiary);
+}
+
+.game-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.game-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.game-platform-badge {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  background: #000000;
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+}
+
+.game-path-row {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Lista de Tecnologías por Juego */
+.dll-tech-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #0a0a0a;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sharp);
+  padding: 10px;
+}
+
+.dll-tech-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.tech-tag-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tech-badge {
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: var(--radius-sharp);
+}
+
+.badge-dlss_sr {
+  background: rgba(118, 185, 0, 0.2);
+  color: var(--color-surface-green);
+  border: 1px solid var(--color-tertiary);
+}
+
+.badge-dlss_fg {
+  background: rgba(0, 216, 255, 0.15);
+  color: #00d8ff;
+  border: 1px solid #00d8ff;
+}
+
+.badge-dlss_rr {
+  background: rgba(223, 101, 0, 0.2);
+  color: #ff9a3c;
+  border: 1px solid var(--color-accent-orange);
+}
+
+.badge-xess {
+  background: rgba(0, 113, 197, 0.2);
+  color: #4da3ff;
+  border: 1px solid #0071c5;
+}
+
+.badge-fsr {
+  background: rgba(237, 28, 36, 0.2);
+  color: #ff6b72;
+  border: 1px solid #ed1c24;
+}
+
+.tech-version-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ver-curr {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.badge-backup {
+  font-size: 8px;
+  font-family: var(--font-mono);
+  background: #1e1e1e;
+  color: var(--color-text-dim);
+  padding: 1px 4px;
+  border-radius: var(--radius-sharp);
+  border: 1px solid #333;
+}
+
+/* Acciones de la Tarjeta */
+.game-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ================== PESTAÑA 02: SHADER PURGE HERO ================== */
+.shader-hero-card {
+  margin: 20px;
+  background: var(--color-neutral);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-tertiary);
+  border-radius: var(--radius-sharp);
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 30px;
+}
+
+.hero-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--color-tertiary);
+  margin-bottom: 6px;
+}
+
+.hero-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.hero-desc {
+  font-size: 13px;
+  color: var(--color-text-dim);
+  line-height: 1.6;
+  max-width: 680px;
+  margin-bottom: 20px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reclaim-metric-card {
+  background: #0c0c0c;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+}
+
+.metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--color-text-dim);
+  margin-bottom: 8px;
+}
+
+.metric-number {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--color-surface-green);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.metric-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.metric-safety-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--color-surface-green);
+  background: rgba(191, 242, 48, 0.08);
+  padding: 4px 8px;
+  border: 1px solid rgba(191, 242, 48, 0.2);
+  border-radius: var(--radius-sharp);
+}
+
+/* Categorías de Shaders */
+.shader-categories-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 20px 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.shader-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shader-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.shader-card-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shader-card-size {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-surface-green);
+}
+
+.shader-card-desc {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  line-height: 1.4;
+}
+
+.shader-card-path {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  word-break: break-all;
+  background: #080808;
+  padding: 6px;
+  border: 1px solid #1a1a1a;
+  border-radius: var(--radius-sharp);
+}
+
+.shader-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.shader-card-stats {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+/* ================== PESTAÑA 03: TELEMETRÍA DE GPU ================== */
+.telemetry-deck {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+  gap: 20px;
+}
+
+.telemetry-card {
+  background: var(--color-neutral);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 20px;
+}
+
+.card-head {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.card-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-tertiary);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.prop-k {
+  color: var(--color-text-dim);
+}
+
+.prop-v {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* ================== MODAL DE SWAP ================== */
+.matrix-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.matrix-modal {
+  width: 580px;
+  background: var(--color-neutral);
+  border: 1px solid var(--color-tertiary);
+  border-radius: var(--radius-sharp);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-tertiary);
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-dim);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-info-box {
+  background: #0e0e0e;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.info-k {
+  color: var(--color-text-dim);
+}
+
+.info-v {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.code-path {
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--color-text-dim);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.versions-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  background: #090909;
+}
+
+.version-option {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border-subtle);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.version-option:hover {
+  background: rgba(118, 185, 0, 0.08);
+}
+
+.version-option.selected {
+  background: rgba(118, 185, 0, 0.2);
+  border-left: 3px solid var(--color-tertiary);
+}
+
+.ver-opt-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ver-opt-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.modal-footer {
+  padding: 16px 20px;
+  background: #111111;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Toast Notificaciones */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  background: #141414;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-tertiary);
+  padding: 12px 18px;
+  border-radius: var(--radius-sharp);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  animation: toastIn 0.25s ease;
+}
+
+.toast.toast-error {
+  border-left-color: #ff3344;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estados de Carga y Vacío */
+.matrix-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 280px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-tertiary);
+}
+
+.spinner-die {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-tertiary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.matrix-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 280px;
+  color: var(--color-text-dim);
+  text-align: center;
+}
+
+.matrix-empty h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Scrollbar Personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252525;
+  border-radius: 1px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tertiary);
+}
