@@ -16,10 +16,15 @@ Suite de optimización para PC con arquitectura de diseño **NVIDIA Power Green*
   - `nvngx_dlssd.dll` (NVIDIA DLSS 3.5 Ray Reconstruction)
   - `libxess.dll` (Intel XeSS)
   - `amd_fidelityfx_*.dll` (AMD FSR 2/3)
-- **Lector Nativo Win32**: Extrae la versión exacta de compilación (ej. `v3.7.10.0`) directamente desde los recursos PE sin herramientas externas.
+- **Catálogo Online de Versiones Verificadas**: Descarga en 1 clic versiones oficiales del SDK de NVIDIA (DLSS 3.7.20 con Preset E, 3.7.10, 3.5.10, Frame Gen y Ray Reconstruction) directamente a tu bóveda local.
+- **Portadas Visuales y Banners Procedurales**: Cada tarjeta de juego muestra su portada de alta definición desde el CDN de Steam o un banner procedural NVIDIA Green generado al vuelo.
+- **Lanzador Directo de Juegos**: Botón `[JUGAR]` integrado que inicia juegos de Steam mediante su protocolo oficial (`steam://run/<AppID>`) o juegos locales/personalizados identificando su binario `.exe` principal.
+- **Filtros Rápidos por Estado**: Filtra al instante entre `[TODOS]`, `[ACTUALIZADOS (.BAK)]`, `[DISPONIBLES]` (versión más reciente en bóveda) y `[ORIGINALES]`.
+- **Lector Nativo Win32**: Extrae la versión exacta de compilación (ej. `v3.7.20.0`) directamente desde los recursos PE sin herramientas externas.
 - **Copias de Seguridad Inmutables (`.bak`)**: Antes de actualizar cualquier DLL, se genera automáticamente una copia `.bak` del archivo original.
 - **Reversión en 1 Clic**: Restaura instantáneamente la versión oficial de fábrica si un juego experimenta incompatibilidad.
 - **Bóveda Local de Versiones (`library/`)**: Almacén centralizado donde puedes importar y conservar versiones oficiales de DLLs para inyectar en cualquier juego.
+- **Gestión de Carpetas Personalizadas**: Añade y desvincula carpetas manuales de juegos sin tocar los archivos de tu disco.
 
 ### 2. Purgador Inteligente de Shaders (ShaderPurge)
 - **Cachés Analizadas:**

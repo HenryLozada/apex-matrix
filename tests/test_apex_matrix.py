@@ -21,6 +21,8 @@ from core.dll_detector import DllDetector
 from core.dll_swapper import DllSwapper
 from core.shader_cleaner import ShaderCleaner
 from core.gpu_telemetry import GpuTelemetry
+from core.dlss_catalog import DlssCatalogManager
+from core.game_launcher import GameLauncher
 from main import ApexMatrixApi
 
 
@@ -220,6 +222,63 @@ class TestApexMatrixApi(unittest.TestCase):
 
         telem = self.api.get_system_telemetry()
         self.assertIn("primary_gpu", telem)
+
+        catalog = self.api.get_dlss_catalog()
+        self.assertIsInstance(catalog, list)
+        self.assertGreater(len(catalog), 0)
+
+
+class TestDlssCatalogManager(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.catalog = DlssCatalogManager(Path(self.temp_dir.name))
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_get_catalog_structure(self):
+        items = self.catalog.get_catalog()
+        self.assertIsInstance(items, list)
+        self.assertGreater(len(items), 0)
+        first = items[0]
+        self.assertIn("id", first)
+        self.assertIn("name", first)
+        self.assertIn("version", first)
+        self.assertIn("is_downloaded", first)
+        self.assertFalse(first["is_downloaded"])
+
+    def test_download_invalid_catalog_id(self):
+        res = self.catalog.download_catalog_item("non_existent_id_xyz")
+        self.assertFalse(res["success"])
+        self.assertIn("error", res)
+
+
+class TestGameLauncher(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.mock_game = Path(self.temp_dir.name) / "MyGame"
+        self.mock_game.mkdir()
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_get_game_cover_steam(self):
+        cover = GameLauncher.get_game_cover("Cyberpunk 2077", app_id="1091500", platform="Steam")
+        self.assertTrue(cover.startswith("https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/1091500/header.jpg"))
+
+    def test_get_game_cover_procedural_svg(self):
+        cover = GameLauncher.get_game_cover("Doom Eternal", platform="Epic Games")
+        self.assertTrue(cover.startswith("data:image/svg+xml;utf8,"))
+        self.assertIn("Doom%20Eternal", cover)
+
+    def test_launch_nonexistent_game(self):
+        res = GameLauncher.launch_game("C:\\NonExistent_Fake_Game_Folder_999")
+        self.assertFalse(res["success"])
+
+    def test_launch_game_without_exe(self):
+        res = GameLauncher.launch_game(str(self.mock_game))
+        self.assertFalse(res["success"])
+        self.assertIn("No se encontr", res["error"])
 
 
 if __name__ == "__main__":

@@ -7,11 +7,14 @@ __pycache__/
 # PyInstaller / Packaging artifacts
 build/
 dist/
+*.spec
 *.spec.bak
 
 # Local purge stats & user cache
 library/*.dll
 library/purge_stats.json
+library/custom_paths.json
+*.zip
 *.log
 
 # Virtual Environments

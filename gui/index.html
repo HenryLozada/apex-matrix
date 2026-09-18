@@ -103,10 +103,17 @@
             <button class="filter-chip" data-filter="fsr">FSR (<span id="count-fsr">0</span>)</button>
           </div>
 
+          <div class="filter-group status-filter-group">
+            <button class="filter-chip status-chip active" data-status-filter="all">TODOS</button>
+            <button class="filter-chip status-chip chip-updated" data-status-filter="updated">ACTUALIZADOS (<span id="count-status-updated">0</span>)</button>
+            <button class="filter-chip status-chip chip-available" data-status-filter="available">DISPONIBLES (<span id="count-status-available">0</span>)</button>
+            <button class="filter-chip status-chip chip-original" data-status-filter="original">ORIGINALES (<span id="count-status-original">0</span>)</button>
+          </div>
+
           <div class="toolbar-actions">
-            <button id="btn-download-dlss" class="btn-matrix btn-matrix-primary" title="Descargar automáticamente la última versión oficial desde NVIDIA GitHub">
+            <button id="btn-open-catalog" class="btn-matrix btn-matrix-primary" title="Catálogo de versiones oficiales de DLSS, Frame Gen y Ray Reconstruction">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>DESCARGAR OFICIAL NVIDIA</span>
+              <span>CATÁLOGO DLSS</span>
             </button>
             <button id="btn-add-folder" class="btn-matrix btn-matrix-cyan" title="Agregar carpeta de juego manual o directorio de juegos">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
@@ -282,6 +289,30 @@
         <button id="btn-confirm-swap" class="btn-matrix btn-matrix-primary" disabled>
           <span>APLICAR SWAP (CON BACKUP .BAK)</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Catálogo de Versiones DLSS -->
+  <div id="catalog-modal" class="matrix-modal-backdrop hidden">
+    <div class="matrix-modal catalog-modal-dialog">
+      <div class="modal-head">
+        <div class="modal-title-group">
+          <span class="modal-tag">NVIDIA AI UPSCALING BUNDLE</span>
+          <h3 class="modal-title">CATÁLOGO OFICIAL DE VERSIONES DLSS</h3>
+        </div>
+        <button id="catalog-modal-close" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="catalog-modal-intro">
+          Descarga versiones verificadas directamente a la bóveda local para actualizarlas en cualquiera de tus juegos con un solo clic.
+        </p>
+        <div id="catalog-items-list" class="catalog-items-list">
+          <!-- Renderizado dinámico -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="catalog-modal-done" class="btn-matrix btn-matrix-outline">CERRAR</button>
       </div>
     </div>
   </div>

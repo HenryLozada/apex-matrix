@@ -1044,3 +1044,164 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-tertiary);
 }
+
+/* ==========================================================================
+   STATUS FILTERS, GAME BANNERS, LAUNCHER & CATALOG EXTENSIONS
+   ========================================================================== */
+
+.status-filter-group {
+  border-left: 1px solid var(--color-border);
+  padding-left: 12px;
+  margin-left: 6px;
+}
+
+.chip-updated.active {
+  background: rgba(118, 185, 0, 0.2);
+  border-color: var(--color-tertiary);
+  color: var(--color-surface-green);
+}
+
+.chip-available.active {
+  background: rgba(0, 216, 255, 0.2);
+  border-color: #00d8ff;
+  color: #00d8ff;
+}
+
+.chip-original.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #888888;
+  color: #ffffff;
+}
+
+/* Portada / Banner Visual del Juego */
+.game-card-banner {
+  position: relative;
+  width: calc(100% + 32px);
+  margin: -16px -16px 2px -16px;
+  height: 115px;
+  background: #0d0d0d;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.game-card-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.92);
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+
+.game-matrix-card:hover .game-card-banner img {
+  transform: scale(1.03);
+  filter: brightness(1.05);
+}
+
+/* Botón Iniciar Juego */
+.btn-play {
+  background: var(--color-tertiary);
+  color: #000000;
+  border: 1px solid var(--color-tertiary);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.btn-play:hover {
+  background: var(--color-surface-green);
+  border-color: var(--color-surface-green);
+  box-shadow: 0 0 14px rgba(118, 185, 0, 0.4);
+}
+
+/* Botón Eliminar / Desvincular Carpeta Personalizada */
+.btn-delete-card {
+  color: var(--color-text-dim);
+  border-color: var(--color-border-subtle);
+  padding: 0 7px;
+}
+
+.btn-delete-card:hover {
+  color: #ff4444;
+  border-color: #ff4444;
+  background: rgba(255, 68, 68, 0.12);
+}
+
+/* Modal Catálogo */
+.catalog-modal-dialog {
+  width: 680px;
+  max-width: 94vw;
+}
+
+.catalog-modal-intro {
+  font-size: 12px;
+  color: var(--color-text-dim);
+  line-height: 1.5;
+  padding-bottom: 4px;
+}
+
+.catalog-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.catalog-card {
+  background: #0d0d0d;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sharp);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: border-color var(--transition-fast);
+}
+
+.catalog-card:hover {
+  border-color: var(--color-tertiary);
+}
+
+.catalog-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.catalog-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.catalog-card-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--color-tertiary);
+  background: rgba(118, 185, 0, 0.12);
+  border: 1px solid rgba(118, 185, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: var(--radius-sharp);
+}
+
+.catalog-card-desc {
+  font-size: 11px;
+  color: var(--color-text-dim);
+  line-height: 1.4;
+}
+
+.catalog-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}

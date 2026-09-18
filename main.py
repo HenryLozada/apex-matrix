@@ -19,12 +19,15 @@ from core.dll_detector import DllDetector
 from core.dll_swapper import DllSwapper
 from core.shader_cleaner import ShaderCleaner
 from core.gpu_telemetry import GpuTelemetry
+from core.dlss_catalog import DlssCatalogManager
+from core.game_launcher import GameLauncher
 
 class ApexMatrixApi:
     def __init__(self):
         self.scanner = GameScanner()
         self.swapper = DllSwapper(BASE_DIR / "library")
         self.cleaner = ShaderCleaner(BASE_DIR / "library" / "purge_stats.json")
+        self.catalog = DlssCatalogManager(BASE_DIR / "library")
         self._window = None
 
     def set_window(self, window):
@@ -122,6 +125,35 @@ class ApexMatrixApi:
                     }
                 return {"success": False, "error": "La carpeta especificada no existe."}
             return {"success": False, "cancelled": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def remove_custom_game_folder(self, folder_path: str):
+        """Desvincula una carpeta agregada manualmente sin eliminar archivos del disco."""
+        try:
+            ok = self.scanner.remove_custom_path(folder_path)
+            return {"success": ok, "message": "Carpeta desvinculada de la matriz."}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_dlss_catalog(self):
+        """Obtiene el catálogo curado de versiones de escalado por IA."""
+        try:
+            return self.catalog.get_catalog()
+        except Exception:
+            return []
+
+    def download_catalog_item(self, item_id: str):
+        """Descarga una versión específica del catálogo a la bóveda."""
+        try:
+            return self.catalog.download_catalog_item(item_id)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def launch_game(self, install_path: str, app_id: str = "", platform: str = ""):
+        """Lanza el juego de forma segura sin bloquear la interfaz."""
+        try:
+            return GameLauncher.launch_game(install_path, app_id, platform)
         except Exception as e:
             return {"success": False, "error": str(e)}
 

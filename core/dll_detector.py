@@ -87,11 +87,15 @@ class DllDetector:
         except Exception:
             pass
 
+        from core.game_launcher import GameLauncher
+        cover_url = GameLauncher.get_game_cover(game.name, game.app_id, game.platform)
+
         return {
             "game_name": game.name,
             "platform": game.platform,
             "install_path": str(root),
             "app_id": game.app_id,
+            "cover_url": cover_url,
             "has_upscaling": len(detected_dlls) > 0,
             "dll_count": len(detected_dlls),
             "dlls": detected_dlls

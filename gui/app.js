@@ -6,11 +6,13 @@
 let appState = {
   activeTab: "dlss",
   currentFilter: "all",
+  statusFilter: "all",
   searchQuery: "",
   games: [],
   shaderData: null,
   telemetryData: null,
   libraryVersions: [],
+  catalogItems: [],
   selectedTargetDll: null,
   selectedReplacementPath: null
 };
@@ -33,11 +35,12 @@ const dom = {
 
   // DLSS Tab
   dlssSearchInput: document.getElementById("dlss-search-input"),
-  filterChips: document.querySelectorAll(".filter-chip"),
+  filterChips: document.querySelectorAll(".filter-chip:not(.status-chip)"),
+  statusChips: document.querySelectorAll(".status-chip"),
   dlssLoading: document.getElementById("dlss-loading"),
   dlssEmpty: document.getElementById("dlss-empty"),
   dlssGamesGrid: document.getElementById("dlss-games-grid"),
-  btnDownloadDlss: document.getElementById("btn-download-dlss"),
+  btnOpenCatalog: document.getElementById("btn-open-catalog"),
   btnAddFolder: document.getElementById("btn-add-folder"),
   btnImportDll: document.getElementById("btn-import-dll"),
   btnOpenLibrary: document.getElementById("btn-open-library"),
@@ -49,6 +52,9 @@ const dom = {
   countDlssRr: document.getElementById("count-dlss-rr"),
   countXess: document.getElementById("count-xess"),
   countFsr: document.getElementById("count-fsr"),
+  countStatusUpdated: document.getElementById("count-status-updated"),
+  countStatusAvailable: document.getElementById("count-status-available"),
+  countStatusOriginal: document.getElementById("count-status-original"),
 
   // Shader Tab
   btnPurgeAll: document.getElementById("btn-purge-all"),
@@ -76,6 +82,12 @@ const dom = {
   modalTargetCurrVer: document.getElementById("modal-target-curr-ver"),
   modalTargetPath: document.getElementById("modal-target-path"),
   modalVersionsList: document.getElementById("modal-versions-list"),
+
+  // Catalog Modal
+  catalogModal: document.getElementById("catalog-modal"),
+  catalogModalClose: document.getElementById("catalog-modal-close"),
+  catalogModalDone: document.getElementById("catalog-modal-done"),
+  catalogItemsList: document.getElementById("catalog-items-list"),
 
   // Toast
   toastContainer: document.getElementById("toast-container")
@@ -128,6 +140,16 @@ function setupEventListeners() {
     });
   });
 
+  // Filtros por Estado de Archivo
+  dom.statusChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      dom.statusChips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      appState.statusFilter = chip.getAttribute("data-status-filter");
+      renderDlssGames();
+    });
+  });
+
   // Acciones Globales
   dom.btnGlobalRefresh.addEventListener("click", () => {
     showToast("Sincronizando bibliotecas y telemetría de shaders...", "info");
@@ -145,34 +167,20 @@ function setupEventListeners() {
     loadShaderCaches();
   });
 
-  // Acciones Modal
+  // Acciones Modal Swap
   dom.modalCloseBtn.addEventListener("click", closeSwapModal);
   dom.btnCancelSwap.addEventListener("click", closeSwapModal);
   dom.btnConfirmSwap.addEventListener("click", executeSwap);
 
-  // Descargar DLSS Oficial desde NVIDIA
-  if (dom.btnDownloadDlss) {
-    dom.btnDownloadDlss.addEventListener("click", async () => {
-      showToast("Conectando con NVIDIA GitHub y descargando última versión oficial...", "info");
-      dom.btnDownloadDlss.disabled = true;
-      try {
-        if (window.pywebview) {
-          const res = await window.pywebview.api.download_official_dlss();
-          if (res && res.success) {
-            showToast(res.message, "success");
-            appState.libraryVersions = await window.pywebview.api.get_library_versions();
-          } else {
-            showToast(res.error || "Error al descargar", "error");
-          }
-        } else {
-          showToast("Función disponible en la aplicación de escritorio.", "info");
-        }
-      } catch (err) {
-        showToast("Error en descarga: " + err, "error");
-      } finally {
-        dom.btnDownloadDlss.disabled = false;
-      }
-    });
+  // Acciones Modal Catálogo DLSS
+  if (dom.btnOpenCatalog) {
+    dom.btnOpenCatalog.addEventListener("click", openCatalogModal);
+  }
+  if (dom.catalogModalClose) {
+    dom.catalogModalClose.addEventListener("click", closeCatalogModal);
+  }
+  if (dom.catalogModalDone) {
+    dom.catalogModalDone.addEventListener("click", closeCatalogModal);
   }
 
   // Agregar Carpeta de Juego
@@ -245,6 +253,7 @@ async function loadGamesAndUpscalers() {
 
 function updateDlssCounters() {
   let counts = { all: 0, dlss_sr: 0, dlss_fg: 0, dlss_rr: 0, xess: 0, fsr: 0 };
+  let statusCounts = { updated: 0, available: 0, original: 0 };
 
   appState.games.forEach(game => {
     counts.all++;
@@ -252,6 +261,20 @@ function updateDlssCounters() {
     techs.forEach(t => {
       if (counts[t] !== undefined) counts[t]++;
     });
+
+    const hasBackup = (game.dlls || []).some(d => d.has_backup);
+    const hasAvailable = (game.dlls || []).some(d => {
+      const vaultMatch = appState.libraryVersions.find(v => v.tech_type === d.tech_type);
+      return vaultMatch && vaultMatch.version !== d.version && !d.has_backup;
+    });
+
+    if (hasBackup) {
+      statusCounts.updated++;
+    } else if (hasAvailable) {
+      statusCounts.available++;
+    } else {
+      statusCounts.original++;
+    }
   });
 
   dom.countAllDlss.textContent = counts.all;
@@ -260,21 +283,39 @@ function updateDlssCounters() {
   dom.countDlssRr.textContent = counts.dlss_rr;
   dom.countXess.textContent = counts.xess;
   dom.countFsr.textContent = counts.fsr;
+
+  if (dom.countStatusUpdated) dom.countStatusUpdated.textContent = statusCounts.updated;
+  if (dom.countStatusAvailable) dom.countStatusAvailable.textContent = statusCounts.available;
+  if (dom.countStatusOriginal) dom.countStatusOriginal.textContent = statusCounts.original;
 }
 
 function renderDlssGames() {
   dom.dlssLoading.classList.add("hidden");
 
   const filtered = appState.games.filter(game => {
-    // Filtro por tecnología
+    // 1. Filtro por tecnología
     if (appState.currentFilter !== "all") {
       const hasTech = (game.dlls || []).some(d => d.tech_type === appState.currentFilter);
       if (!hasTech) return false;
     }
-    // Filtro por búsqueda
+
+    // 2. Filtro por estado de archivo
+    if (appState.statusFilter !== "all") {
+      const hasBackup = (game.dlls || []).some(d => d.has_backup);
+      const hasAvailable = (game.dlls || []).some(d => {
+        const vaultMatch = appState.libraryVersions.find(v => v.tech_type === d.tech_type);
+        return vaultMatch && vaultMatch.version !== d.version && !d.has_backup;
+      });
+
+      if (appState.statusFilter === "updated" && !hasBackup) return false;
+      if (appState.statusFilter === "available" && !hasAvailable) return false;
+      if (appState.statusFilter === "original" && (hasBackup || hasAvailable)) return false;
+    }
+
+    // 3. Filtro por búsqueda
     if (appState.searchQuery) {
-      const matchName = game.game_name.toLowerCase().includes(appState.searchQuery);
-      const matchPath = game.install_path.toLowerCase().includes(appState.searchQuery);
+      const matchName = (game.game_name || "").toLowerCase().includes(appState.searchQuery);
+      const matchPath = (game.install_path || "").toLowerCase().includes(appState.searchQuery);
       if (!matchName && !matchPath) return false;
     }
     return true;
@@ -295,6 +336,7 @@ function renderDlssGames() {
     card.className = "game-matrix-card";
 
     const hasAnyBackup = (game.dlls || []).some(d => d.has_backup);
+    const isCustom = game.platform === "Personalizado";
 
     let dllsHtml = (game.dlls || []).map(dll => {
       // Determinar si hay una versión disponible en la bóveda para esta tecnología
@@ -331,10 +373,26 @@ function renderDlssGames() {
       `;
     }).join("");
 
+    const bannerHtml = game.cover_url ? `
+      <div class="game-card-banner">
+        <img src="${escapeHtml(game.cover_url)}" alt="${escapeHtml(game.game_name)}" loading="lazy" onerror="this.parentElement.style.display='none'"/>
+      </div>
+    ` : '';
+
+    const deleteBtnHtml = isCustom ? `
+      <button class="btn-matrix btn-matrix-outline btn-delete-card" onclick="removeCustomFolder('${escapeJsStr(game.install_path)}')" title="Desvincular carpeta de ApexMatrix">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    ` : '';
+
     card.innerHTML = `
+      ${bannerHtml}
       <div class="game-head">
         <div class="game-name">${escapeHtml(game.game_name)}</div>
-        <span class="game-platform-badge">${escapeHtml(game.platform)}</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="game-platform-badge">${escapeHtml(game.platform)}</span>
+          ${deleteBtnHtml}
+        </div>
       </div>
       <div class="game-path-row" title="${escapeHtml(game.install_path)}">
         ${escapeHtml(game.install_path)}
@@ -343,6 +401,10 @@ function renderDlssGames() {
         ${dllsHtml}
       </div>
       <div class="game-card-actions">
+        <button class="btn-matrix btn-play" onclick="launchGame('${escapeJsStr(game.install_path)}', '${escapeJsStr(game.app_id || '')}', '${escapeJsStr(game.platform || '')}')" title="Iniciar juego directamente">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>JUGAR</span>
+        </button>
         ${hasAnyBackup ? `
           <button class="btn-matrix btn-matrix-outline" style="height:26px; padding:0 10px; font-size:9px;" onclick="restoreAllInGame('${escapeJsStr(game.install_path)}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -355,7 +417,7 @@ function renderDlssGames() {
         </button>
         <button class="btn-matrix btn-matrix-outline" style="height:26px; padding:0 10px; font-size:9px;" onclick="openGameFolder('${escapeJsStr(game.install_path)}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span>EXPLORADOR</span>
+          <span>CARPETA</span>
         </button>
       </div>
     `;
@@ -607,6 +669,141 @@ window.restoreAllInGame = async function(gamePath) {
 window.openGameFolder = function(path) {
   if (window.pywebview) {
     window.pywebview.api.open_folder(path);
+  }
+};
+
+window.launchGame = async function(installPath, appId, platform) {
+  showToast("Iniciando juego...", "info");
+  try {
+    if (window.pywebview) {
+      const res = await window.pywebview.api.launch_game(installPath, appId, platform);
+      if (res && res.success) {
+        showToast(res.message || "Juego iniciado", "success");
+      } else {
+        showToast(res.error || "No se pudo iniciar el juego", "error");
+      }
+    } else {
+      showToast("Lanzador disponible en la versión de escritorio.", "info");
+    }
+  } catch (err) {
+    showToast("Error al iniciar juego: " + err, "error");
+  }
+};
+
+window.removeCustomFolder = async function(installPath) {
+  if (!confirm("¿Deseas desvincular esta carpeta de ApexMatrix?\n(No se eliminará ningún archivo de tu disco)")) return;
+  try {
+    if (window.pywebview) {
+      const res = await window.pywebview.api.remove_custom_game_folder(installPath);
+      if (res && res.success) {
+        showToast("Carpeta desvinculada de la matriz", "success");
+        loadGamesAndUpscalers();
+      } else {
+        showToast(res.error || "Error al desvincular carpeta", "error");
+      }
+    }
+  } catch (err) {
+    showToast("Error: " + err, "error");
+  }
+};
+
+window.openCatalogModal = async function() {
+  if (dom.catalogModal) {
+    dom.catalogModal.classList.remove("hidden");
+    await loadCatalogItems();
+  }
+};
+
+window.closeCatalogModal = function() {
+  if (dom.catalogModal) {
+    dom.catalogModal.classList.add("hidden");
+  }
+};
+
+async function loadCatalogItems() {
+  if (!dom.catalogItemsList) return;
+  dom.catalogItemsList.innerHTML = `
+    <div style="padding:20px; text-align:center; color:var(--color-text-dim); font-size:11px;">
+      Cargando catálogo oficial de NVIDIA SDK...
+    </div>
+  `;
+  try {
+    if (window.pywebview) {
+      appState.catalogItems = await window.pywebview.api.get_dlss_catalog();
+    } else {
+      appState.catalogItems = [
+        { id: "dlss_3_7_20", name: "NVIDIA DLSS v3.7.20", version: "3.7.20.0", category: "Super Resolution", tag: "MÁXIMA NITIDEZ", description: "Última versión optimizada con Preset E. Gran reducción de ghosting y artefactos en movimiento.", is_downloaded: false },
+        { id: "dlss_3_7_10", name: "NVIDIA DLSS v3.7.10", version: "3.7.10.0", category: "Super Resolution", tag: "OFICIAL SDK", description: "Versión oficial del SDK de NVIDIA. Muy alta estabilidad en títulos Unreal Engine 5.", is_downloaded: true },
+        { id: "dlss_fg_3_7_10", name: "NVIDIA DLSS 3 Frame Generation", version: "3.7.10.0", category: "Frame Generation", tag: "RTX 40/50 SERIES", description: "Librería oficial de generación de fotogramas por hardware para duplicar los FPS.", is_downloaded: false }
+      ];
+    }
+    renderCatalogItems();
+  } catch (err) {
+    dom.catalogItemsList.innerHTML = `
+      <div style="padding:20px; text-align:center; color:var(--color-accent-orange); font-size:11px;">
+        Error al cargar catálogo: ${escapeHtml(err)}
+      </div>
+    `;
+  }
+}
+
+function renderCatalogItems() {
+  if (!dom.catalogItemsList) return;
+  dom.catalogItemsList.innerHTML = "";
+
+  (appState.catalogItems || []).forEach(item => {
+    const card = document.createElement("div");
+    card.className = "catalog-card";
+    card.innerHTML = `
+      <div class="catalog-card-info">
+        <div class="catalog-card-header">
+          <span class="catalog-card-title">${escapeHtml(item.name)}</span>
+          <span class="catalog-card-tag">${escapeHtml(item.tag || item.category)}</span>
+        </div>
+        <div class="catalog-card-desc">${escapeHtml(item.description)}</div>
+      </div>
+      <div class="catalog-card-actions">
+        ${item.is_downloaded ? `
+          <span class="status-badge status-updated" style="font-size:9px; padding:5px 8px;">EN BÓVEDA</span>
+        ` : `
+          <button class="btn-matrix btn-matrix-primary" id="btn-dl-${item.id}" style="height:28px; padding:0 12px; font-size:10px;" onclick="downloadCatalogItem('${escapeJsStr(item.id)}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>DESCARGAR</span>
+          </button>
+        `}
+      </div>
+    `;
+    dom.catalogItemsList.appendChild(card);
+  });
+}
+
+window.downloadCatalogItem = async function(itemId) {
+  const btn = document.getElementById(`btn-dl-${itemId}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>DESCARGANDO...</span>`;
+  }
+  showToast("Descargando versión oficial a la bóveda...", "info");
+
+  try {
+    if (window.pywebview) {
+      const res = await window.pywebview.api.download_catalog_item(itemId);
+      if (res && res.success) {
+        showToast(res.message, "success");
+        appState.libraryVersions = await window.pywebview.api.get_library_versions();
+        await loadCatalogItems();
+        updateDlssCounters();
+        renderDlssGames();
+      } else {
+        showToast(res.error || "Fallo al descargar", "error");
+        if (btn) btn.disabled = false;
+      }
+    } else {
+      showToast("Descarga completada (Modo Demostración)", "success");
+    }
+  } catch (err) {
+    showToast("Error en descarga: " + err, "error");
+    if (btn) btn.disabled = false;
   }
 };
 
