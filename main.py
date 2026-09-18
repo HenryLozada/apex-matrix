@@ -104,6 +104,27 @@ class ApexMatrixApi:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def add_custom_game_folder(self):
+        """Abre un diálogo nativo de Windows para que el usuario seleccione una carpeta de juego."""
+        if not self._window:
+            return {"success": False, "error": "Ventana no inicializada"}
+        try:
+            res = self._window.create_file_dialog(webview.FOLDER_DIALOG)
+            if res and len(res) > 0:
+                folder_path = res[0]
+                ok = self.scanner.add_custom_path(folder_path)
+                if ok:
+                    folder_name = Path(folder_path).name
+                    return {
+                        "success": True,
+                        "path": folder_path,
+                        "message": f"Carpeta de juego añadida: {folder_name}"
+                    }
+                return {"success": False, "error": "La carpeta especificada no existe."}
+            return {"success": False, "cancelled": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     # 2. ShaderPurge & Limpiador de Caché de GPU
     def scan_shader_caches(self):
         """Escanea el tamaño de cachés de shaders NVIDIA, DirectX y crash dumps."""

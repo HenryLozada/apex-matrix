@@ -58,6 +58,26 @@ class TestGameScanner(unittest.TestCase):
             self.assertIsInstance(g, InstalledGameTarget)
             self.assertTrue(g.install_path.exists())
 
+    def test_custom_paths_persistence_and_scanning(self):
+        """Verifica la adición y persistencia de carpetas personalizadas de juegos."""
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg_file = Path(tmp) / "custom.json"
+            scanner = GameScanner(config_file=cfg_file)
+            mock_game = Path(tmp) / "CustomRPG"
+            mock_game.mkdir()
+
+            ok = scanner.add_custom_path(mock_game)
+            self.assertTrue(ok)
+            self.assertIn(str(mock_game), scanner.get_custom_paths())
+            self.assertTrue(cfg_file.exists())
+
+            # Recargar en una nueva instancia para verificar persistencia
+            scanner2 = GameScanner(config_file=cfg_file)
+            self.assertIn(str(mock_game), scanner2.get_custom_paths())
+            games = scanner2.scan_common_game_folders()
+            game_names = [g.name for g in games]
+            self.assertIn("Customrpg", game_names)
+
 
 class TestDllDetectorAndSwapper(unittest.TestCase):
     def setUp(self):

@@ -38,6 +38,7 @@ const dom = {
   dlssEmpty: document.getElementById("dlss-empty"),
   dlssGamesGrid: document.getElementById("dlss-games-grid"),
   btnDownloadDlss: document.getElementById("btn-download-dlss"),
+  btnAddFolder: document.getElementById("btn-add-folder"),
   btnImportDll: document.getElementById("btn-import-dll"),
   btnOpenLibrary: document.getElementById("btn-open-library"),
 
@@ -170,6 +171,24 @@ function setupEventListeners() {
         showToast("Error en descarga: " + err, "error");
       } finally {
         dom.btnDownloadDlss.disabled = false;
+      }
+    });
+  }
+
+  // Agregar Carpeta de Juego
+  if (dom.btnAddFolder) {
+    dom.btnAddFolder.addEventListener("click", async () => {
+      if (window.pywebview) {
+        showToast("Selecciona la carpeta del juego o directorio de juegos...", "info");
+        const res = await window.pywebview.api.add_custom_game_folder();
+        if (res && res.success) {
+          showToast(res.message, "success");
+          loadGamesAndUpscalers();
+        } else if (res && res.error) {
+          showToast(res.error, "error");
+        }
+      } else {
+        showToast("Función disponible en la aplicación de escritorio.", "info");
       }
     });
   }

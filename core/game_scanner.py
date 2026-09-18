@@ -19,13 +19,54 @@ class InstalledGameTarget:
     app_id: Optional[str] = None
 
 class GameScanner:
-    def __init__(self):
+    def __init__(self, config_file: Path | str = None):
+        if config_file:
+            self.config_file = Path(config_file)
+        else:
+            self.config_file = Path(__file__).resolve().parent.parent / "library" / "custom_paths.json"
         self._custom_paths: List[Path] = []
+        self._load_custom_paths()
 
-    def add_custom_path(self, path: Path | str):
+    def _load_custom_paths(self):
+        if self.config_file.exists():
+            try:
+                data = json.loads(self.config_file.read_text(encoding="utf-8"))
+                for p_str in data:
+                    p = Path(p_str).resolve()
+                    if p.exists() and p not in self._custom_paths:
+                        self._custom_paths.append(p)
+            except Exception:
+                pass
+
+    def _save_custom_paths(self):
+        try:
+            self.config_file.parent.mkdir(parents=True, exist_ok=True)
+            self.config_file.write_text(
+                json.dumps([str(p) for p in self._custom_paths], indent=2),
+                encoding="utf-8"
+            )
+        except Exception:
+            pass
+
+    def add_custom_path(self, path: Path | str) -> bool:
         p = Path(path).resolve()
-        if p.exists() and p not in self._custom_paths:
-            self._custom_paths.append(p)
+        if p.exists():
+            if p not in self._custom_paths:
+                self._custom_paths.append(p)
+                self._save_custom_paths()
+            return True
+        return False
+
+    def remove_custom_path(self, path: Path | str) -> bool:
+        p = Path(path).resolve()
+        if p in self._custom_paths:
+            self._custom_paths.remove(p)
+            self._save_custom_paths()
+            return True
+        return False
+
+    def get_custom_paths(self) -> List[str]:
+        return [str(p) for p in self._custom_paths]
 
     def scan_all_games(self) -> List[InstalledGameTarget]:
         """Detecta todos los juegos instalados en el sistema."""
@@ -197,19 +238,44 @@ class GameScanner:
 
     def scan_common_game_folders(self) -> List[InstalledGameTarget]:
         games = []
-        check_dirs = [
-            Path(r"C:\Games"),
-            Path(r"D:\Games"),
-            Path(r"E:\Games"),
-            *self._custom_paths
-        ]
-        for cdir in check_dirs:
+
+        # 1. Agregar carpetas personalizadas añadidas manualmente por el usuario
+        for custom_dir in self._custom_paths:
+            if custom_dir.exists() and custom_dir.is_dir():
+                clean_name = custom_dir.name.replace("-", " ").replace("_", " ").title()
+                games.append(InstalledGameTarget(
+                    name=clean_name,
+                    platform="Personalizado",
+                    install_path=custom_dir
+                ))
+                # También revisar si contiene subcarpetas de juegos
+                try:
+                    for sub in custom_dir.iterdir():
+                        if sub.is_dir() and not sub.name.startswith("."):
+                            has_binaries = (sub / "Binaries").exists() or any(sub.glob("*.exe"))
+                            if has_binaries:
+                                sub_name = sub.name.replace("-", " ").replace("_", " ").title()
+                                games.append(InstalledGameTarget(
+                                    name=sub_name,
+                                    platform="Personalizado",
+                                    install_path=sub
+                                ))
+                except Exception:
+                    pass
+
+        # 2. Carpetas comunes de juegos (C:\Games, D:\Games, etc.)
+        common_drives = [Path(r"C:\Games"), Path(r"D:\Games"), Path(r"E:\Games"), Path(r"F:\Games")]
+        for cdir in common_drives:
             if cdir.exists() and cdir.is_dir():
-                for sub in cdir.iterdir():
-                    if sub.is_dir():
-                        games.append(InstalledGameTarget(
-                            name=sub.name.replace("_", " "),
-                            platform="PC / Custom",
-                            install_path=sub
-                        ))
+                try:
+                    for sub in cdir.iterdir():
+                        if sub.is_dir() and not sub.name.startswith("."):
+                            games.append(InstalledGameTarget(
+                                name=sub.name.replace("_", " ").replace("-", " ").title(),
+                                platform="PC / Games",
+                                install_path=sub
+                            ))
+                except Exception:
+                    pass
+
         return games
